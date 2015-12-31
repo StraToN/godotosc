@@ -1,0 +1,57 @@
+var udp = PacketPeerUDP.new()
+#var host = "192.168.1.36"
+var host = "127.0.0.1"
+var remote_port = 7700
+var listen_port = 9000
+
+
+func _ready():
+	var err = udp.listen( listen_port )
+	if (err!=OK):
+		print("Error:\nCan't Listen.")
+	else:
+		print("Connected.")
+		err = udp.set_send_address(host, remote_port)
+		if (err!=OK):
+			print("Error:\nCan't Resolve.")
+
+	set_process(true)
+
+
+func _process(delta):
+	if (not udp.is_listening()):
+		return
+		
+	while(udp.get_available_packet_count()>0):
+		var packet = udp.get_var()
+		if (typeof(packet)==TYPE_STRING):
+			var host = udp.get_packet_ip()
+			var port = udp.get_packet_port()
+			
+func on_Button_pressed():
+	var oscMsg1 = OSCMessage.new()
+	oscMsg1.init("/target")
+	oscMsg1.push_int32(123)
+	
+	var oscPW = OSCPacketWriter.new()
+	oscPW.start_bundle()
+	oscPW.add_message(oscMsg1)
+	oscPW.end_bundle()
+	
+	if (oscPW.is_ok()):
+		udp.put_var(oscPW.get_packet_string())
+	
+
+	var variable = udp.get_var()
+	var oscPR = OSCPacketReader.new()
+	oscPR.init(variable)
+	
+	if (oscPR.is_ok()):
+		var oscMsg2 = oscPR.pop_message()
+
+
+func send_message(variable):
+	if (udp.is_listening()):
+		return udp.put_var(variable)
+	else:
+		return 1

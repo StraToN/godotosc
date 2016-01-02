@@ -1,4 +1,3 @@
-/* sumator.cpp */
 
 #include "osc.h"
 
@@ -20,52 +19,44 @@ void OSCMessage::_bind_methods() {
 //	ObjectTypeDB::bind_method("push_blob",&OSCMessage::pushBlob);
 	ObjectTypeDB::bind_method("clear",&OSCMessage::clear);
 //	ObjectTypeDB::bind_method("pack_message",&OSCMessage::packMessage);
-
 }
 
-OSCMessage& OSCMessage::init(const String& s) {
+void OSCMessage::init(const String& s) {
 	CharString ascii = s.ascii();
-	message.init(ascii.get_data());	// TimeTag will be immediate
-	return *this;
+	message->init(ascii.get_data());	// TimeTag will be immediate
 }
 
-OSCMessage& OSCMessage::pushBool(bool b) {
-	message.pushBool(b);
-	return *this;
+void OSCMessage::pushBool(bool b) {
+	message->pushBool(b);
 }
 
-OSCMessage& OSCMessage::pushInt32(int32_t i) {
-	message.pushInt32(i);
-	return *this;
+void OSCMessage::pushInt32(int32_t i) {
+	message->pushInt32(i);
 }
 
-OSCMessage& OSCMessage::pushInt64(int64_t h) {
-	message.pushInt64(h);
-	return *this;
+void OSCMessage::pushInt64(int64_t h) {
+	message->pushInt64(h);
 }
 
-OSCMessage& OSCMessage::pushFloat(float f) {
-	message.pushFloat(f);
-	return *this;
+void OSCMessage::pushFloat(float f) {
+	message->pushFloat(f);
 }
 
-OSCMessage& OSCMessage::pushDouble(double d) {
-	message.pushDouble(d);
-	return *this;
+void OSCMessage::pushDouble(double d) {
+	message->pushDouble(d);
 }
 
-OSCMessage& OSCMessage::pushStr(const String& s) {
+void OSCMessage::pushStr(const String& s) {
 	CharString ascii = s.ascii();
-	message.pushStr(std::string(ascii.get_data()));
-	return *this;
+	message->pushStr(std::string(ascii.get_data()));
 }
 
 
 void OSCMessage::clear() {
-	message.clear();
+	message->clear();
 }
 
-oscpkt::Message OSCMessage::getMessage() const {
+oscpkt::Message* OSCMessage::getMessage() const {
 	return message;
 }
 
@@ -96,35 +87,36 @@ void OSCPacketReader::_bind_methods() {
 }
 
 
-void OSCPacketReader::init(const Variant& v) {
-	String ptr = String(v);
-	CharString cs = ptr.ascii();
-	pr.init(cs.get_data(), cs.size());
+void OSCPacketReader::init(const String& v) {
+	CharString cs = v.ascii();
+	pr->init(cs.get_data(), cs.size());
 }
 
-OSCMessage OSCPacketReader::popMessage() {
-	oscpkt::Message* msg = pr.popMessage();
-	OSCMessage oscmsg(msg);
-	return oscmsg;
+String OSCPacketReader::popMessage() {
+	oscpkt::Message* msg = pr->popMessage();
+	oscpkt::Storage stor;
+	msg->packMessage(stor, true);
+	return String(stor.getBytes(stor.size()));
 }
 
 bool OSCPacketReader::isOk() const {
-	return pr.isOk();
+	return pr->isOk();
 }
 
 oscpkt::ErrorCode OSCPacketReader::getErr() const {
-	return pr.getErr();
+	return pr->getErr();
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////
+
 
 void OSCPacketWriter::_bind_methods() {
 
 	ObjectTypeDB::bind_method("init",&OSCPacketWriter::init);
 	ObjectTypeDB::bind_method("start_bundle",&OSCPacketWriter::startBundle);
 	ObjectTypeDB::bind_method("end_bundle",&OSCPacketWriter::endBundle);
-	ObjectTypeDB::bind_method("add_message",&OSCPacketWriter::addMessage);
+	ObjectTypeDB::bind_method(_MD("add_message", "oscmessage") ,&OSCPacketWriter::addMessage);
 	ObjectTypeDB::bind_method("is_ok",&OSCPacketWriter::isOk);
 	ObjectTypeDB::bind_method("get_err",&OSCPacketWriter::getErr);
 	ObjectTypeDB::bind_method("packet_size",&OSCPacketWriter::packetSize);
@@ -151,43 +143,40 @@ void OSCPacketWriter::_bind_methods() {
 String OSCPacketWriter::get_packet_string() {
 	String s;
 	if (isOk()) {
-		s = String(pw.packetData());
+		s = String(pw->packetData());
 	}
 	return s;
 }
 
-OSCPacketWriter& OSCPacketWriter::init() {
-	pw.init();
-	return *this;
+void OSCPacketWriter::init() {
+	pw->init();
 }
 
-OSCPacketWriter& OSCPacketWriter::startBundle() {
-	pw.startBundle(oscpkt::TimeTag::immediate());
-	return *this;
+void OSCPacketWriter::startBundle() {
+	pw->startBundle(oscpkt::TimeTag::immediate());
 }
 
-OSCPacketWriter& OSCPacketWriter::endBundle() {
-	pw.endBundle();
-	return *this;
+void OSCPacketWriter::endBundle() {
+	pw->endBundle();
 }
 
-OSCPacketWriter& OSCPacketWriter::addMessage(const OSCMessage& message) {
-	pw.addMessage(message.getMessage());
-	return *this;
+void OSCPacketWriter::addMessage(Ref<OSCMessage> message) {
+	pw->addMessage(*(message->getMessage()));
 }
 
 bool OSCPacketWriter::isOk() {
-	return pw.isOk();
+	return pw->isOk();
 }
 
 oscpkt::ErrorCode OSCPacketWriter::getErr() {
-	return pw.getErr();
+	return pw->getErr();
 }
 
 uint32_t OSCPacketWriter::packetSize() {
-	return pw.packetSize();
+	return pw->packetSize();
 }
 
 char* OSCPacketWriter::packetData() {
-	return pw.packetData();
+	return pw->packetData();
 }
+

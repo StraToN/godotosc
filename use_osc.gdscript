@@ -47,7 +47,10 @@ func on_Button_pressed():
 	oscPR.init(variable)
 	
 	if (oscPR.is_ok()):
-		var oscMsg2 = oscPR.pop_message()
+		var strMsg = oscPR.pop_message()
+		# if I want an OSC message from this string :
+		#var oscMsg2 = OSCMessage.new()
+		#oscMsg2.init(strMsg)
 
 
 func send_message(variable):
